@@ -22,9 +22,12 @@
     return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, k, ct));
   }
 
+  var dbPromise = null;
+  function getDb() { if (!dbPromise) dbPromise = fetch('/users.json', { cache: 'no-store' }).then(function (r) { return r.json(); }); return dbPromise; }
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
   async function signIn(user, pass) {
-    var r = await fetch('/users.json', { cache: 'no-store' });
-    var db = await r.json();
+    var db = await getDb();
     var id = hex(await crypto.subtle.digest('SHA-256', enc.encode('aiops:' + user.trim().toLowerCase())));
     var u = db.users[id];
     if (!u) throw new Error('bad');
@@ -58,7 +61,11 @@
       '<form id="f" autocomplete="on"><label for="u">Username</label><input id="u" name="username" autocomplete="username" required autocapitalize="none" spellcheck="false">' +
       '<label for="pw">Password</label><input id="pw" name="password" type="password" autocomplete="current-password" required>' +
       '<div class="err" id="e" role="alert">' + (msg || '') + '</div><button id="b" type="submit">Sign in</button></form>' +
-      '<p class="fine">Need access? Please contact Lakhshit Kumar.</p>');
+      '<p class="fine" id="req">Need access? Please contact Lakhshit Kumar.</p>');
+    getDb().then(function (db) {
+      if (db.request_to) document.getElementById('req').innerHTML = 'No account yet? <a href="#request-access" id="reqa">Request access</a>';
+      var a = document.getElementById('reqa'); if (a) a.onclick = function (ev) { ev.preventDefault(); showRequest(); };
+    }).catch(function () {});
     var f = document.getElementById('f'), b = document.getElementById('b'), e = document.getElementById('e');
     document.getElementById('u').focus();
     f.onsubmit = async function (ev) {
@@ -69,6 +76,32 @@
       } catch (x) {
         e.textContent = 'Username or password is incorrect.'; b.disabled = false; b.textContent = 'Sign in';
       }
+    };
+  }
+
+  async function showRequest() {
+    var db = {};
+    try { db = await getDb(); } catch (x) {}
+    if (!db.request_to) return showLogin();
+    shell('<h1>Request access</h1><p>Tell Lakhshit who you are. If approved, you will get a username and password by email.</p>' +
+      '<form id="rq"><label for="rn">Full name</label><input id="rn" name="n" autocomplete="name" required>' +
+      '<label for="re">Work email</label><input id="re" name="e" type="email" autocomplete="email" required>' +
+      '<label for="rt">Team or organisation</label><input id="rt" name="t" autocomplete="organization">' +
+      '<label for="rw">Why do you need access?</label><input id="rw" name="w" placeholder="e.g. leadership review, AI ops evaluation">' +
+      '<button type="submit">Send request</button></form>' +
+      '<button class="alt" type="button" id="back">Back to sign in</button>');
+    document.getElementById('rn').focus();
+    document.getElementById('back').onclick = function () { history.replaceState(null, '', location.pathname); showLogin(); };
+    document.getElementById('rq').onsubmit = function (ev) {
+      ev.preventDefault();
+      var f = ev.target, n = f.n.value.trim(), e = f.e.value.trim(), t = f.t.value.trim(), w = f.w.value.trim();
+      var body = 'Hi Lakhshit,\n\nPlease give me access to the AI Operations Strategy site.\n\n' +
+        'Name: ' + n + '\nEmail: ' + e + '\nTeam: ' + (t || '-') + '\nReason: ' + (w || '-') + '\n\nThanks,\n' + n;
+      location.href = 'mailto:' + db.request_to + '?subject=' + encodeURIComponent('Access request: AI Operations Strategy (' + n + ')') +
+        '&body=' + encodeURIComponent(body);
+      shell('<h1>Almost done</h1><p>Your email app has opened with the request ready. Press <b>Send</b> there. ' +
+        'Lakhshit will reply with your sign-in details.</p><p>If nothing opened, email <b>' + esc(db.request_to) +
+        '</b> with your name and why you need access.</p><a class="btn" href="/">Back to the site</a>');
     };
   }
 
@@ -93,5 +126,5 @@
     return;
   }
   var s = load();
-  if (s) open(s); else showLogin();
+  if (s) open(s); else if (location.hash === '#request-access') showRequest(); else showLogin();
 })();

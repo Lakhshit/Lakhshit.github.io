@@ -4,8 +4,8 @@
   'use strict';
   var U = window.AIOPS_USER || { role: 'viewer' };
   var admin = U.role === 'admin';
-  var LOCKED = '[data-p="settings"], #ctl, [data-ctl-on], #interval, [data-locked]';
-  var MSG = 'Settings are managed by Lakhshit. To change anything here, please contact Lakhshit Kumar.';
+  var LOCKED = '[data-p="settings"], [data-p="prompts"], #ctl, [data-ctl-on], #interval, [data-locked]';
+  var MSG = 'This is managed by Lakhshit. Please contact Lakhshit Kumar.';
 
   function signout(e) { e.preventDefault(); if (window.AIOPS_SIGNOUT) window.AIOPS_SIGNOUT(); else { try { localStorage.removeItem('aiops-session'); } catch (x) {} location.href = '/'; } }
 
@@ -53,7 +53,10 @@
     if (admin) return;
     document.querySelectorAll('[data-admin-only]').forEach(function (el) { el.remove(); });
     ['click', 'mousedown', 'keydown'].forEach(function (t) { document.addEventListener(t, block, true); });
-    document.querySelectorAll('[data-p="settings"]').forEach(function (el) { el.title = 'Managed by Lakhshit'; });
+    document.querySelectorAll('[data-p="settings"], [data-p="prompts"]').forEach(function (el) { el.title = 'Managed by Lakhshit'; });
+    var st = document.createElement('style');
+    st.textContent = '.aiops-prompt{display:none!important}';
+    document.head.appendChild(st);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
 })();
