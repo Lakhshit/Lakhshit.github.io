@@ -50,14 +50,16 @@
     '.alt{background:transparent;color:var(--ink);border:1px solid var(--line);margin-top:10px}';
   var MARK = '<div class="mark" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 32 32"><path d="M7 17h5l3-7 4 13 3-6h3" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
 
+  var TITLE = P.title || 'AI Operations Strategy';
+  var TEXT = P.text || 'This site contains AI strategy material prepared for leadership. Access is by invitation.';
   function shell(inner) {
-    document.title = 'AI Operations Strategy';
+    document.title = TITLE;
     document.head.insertAdjacentHTML('beforeend', '<style>' + CSS + '</style>');
     document.body.innerHTML = '<main class="gate"><div class="box">' + MARK + inner + '</div></main>';
   }
 
   function showLogin(msg) {
-    shell('<h1>AI Operations Strategy</h1><p>This site contains AI strategy material prepared for leadership. Access is by invitation.</p>' +
+    shell('<h1>' + esc(TITLE) + '</h1><p>' + esc(TEXT) + '</p>' +
       '<form id="f" autocomplete="on"><label for="u">Username</label><input id="u" name="username" autocomplete="username" required autocapitalize="none" spellcheck="false">' +
       '<label for="pw">Password</label><input id="pw" name="password" type="password" autocomplete="current-password" required>' +
       '<div class="err" id="e" role="alert">' + (msg || '') + '</div><button id="b" type="submit">Sign in</button></form>' +
