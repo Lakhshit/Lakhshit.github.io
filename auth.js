@@ -129,7 +129,7 @@
     var html;
     try { html = dec.decode(await aes(b64(s.keys[P.key]), b64(P.iv), b64(P.ct))); }
     catch (x) { clear(); return showLogin('Your session has expired. Please sign in again.'); }
-    var who = '<script>window.AIOPS_USER=' + JSON.stringify({ user: s.user, role: s.role }) + '<\/script><script src="/guard.js?v=4fb3130502"><\/script>';
+    var who = '<script>window.AIOPS_USER=' + JSON.stringify({ user: s.user, role: s.role }) + '<\/script><script src="/guard.js?v=0a869282b5"><\/script>';
     var i = html.search(/<\/head>/i);
     html = i < 0 ? who + html : html.slice(0, i) + who + html.slice(i);
     document.open(); document.write(html); document.close();

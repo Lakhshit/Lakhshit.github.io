@@ -41,9 +41,16 @@
     (action ? go : ok).focus();
   }
 
-  // Guests cannot approve or reject. They can email Lakhshit an approval request with the incident's details.
-  var requestTo = null;
-  try { fetch('/users.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (db) { requestTo = db.request_to || ''; }).catch(function () {}); } catch (x) {}
+  // Guests cannot approve or reject. They email Lakhshit a request with a link; he approves on the site and sends
+  // back an approval code signed with a key only his account holds. Pasting the code here applies his decision.
+  var requestTo = null, approverPub = null, pending = {};
+  try {
+    fetch('/users.json', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (db) { requestTo = db.request_to || ''; approverPub = db.approver_pub || null; }).catch(function () {});
+  } catch (x) {}
+
+  function b64u(bytes) { var s = ''; bytes.forEach(function (b) { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function fromB64u(t) { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; var b = atob(t), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
 
   function currentIncident() {
     try {
@@ -53,25 +60,69 @@
     } catch (x) { return null; }
   }
 
+  var CODE_BOX = '<label for="aiops-code" style="display:block;font-weight:600;font-size:13.5px;margin-top:14px">Approval code from Lakhshit</label>' +
+    '<textarea id="aiops-code" rows="3" style="width:100%;margin-top:6px;padding:8px;border:1px solid #C9D3D0;border-radius:8px;font:12px/1.4 ui-monospace,Consolas,monospace" placeholder="Paste the code from Lakhshit\'s reply"></textarea>' +
+    '<div id="aiops-code-err" style="color:#B0362C;font-size:13.5px;min-height:1.2em;margin-top:4px"></div>';
+
+  function applyCode(inc, req) {
+    var box = document.getElementById('aiops-code'), err = document.getElementById('aiops-code-err');
+    var code = (box && box.value || '').trim(), parts = code.split('.');
+    function fail(m) { if (err) err.textContent = m; }
+    if (parts.length !== 2) return fail('That does not look like an approval code. Copy the whole code from the email.');
+    if (!approverPub) return fail('Could not load the verification key. Check your connection and try again.');
+    var data, payload;
+    try { data = fromB64u(parts[0]); payload = JSON.parse(new TextDecoder().decode(data)); } catch (e) { return fail('That code is damaged. Copy it again from the email.'); }
+    crypto.subtle.importKey('spki', fromB64u(approverPub.replace(/\+/g, '-').replace(/\//g, '_')), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
+      .then(function (k) { return crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, k, fromB64u(parts[1]), data); })
+      .then(function (ok) {
+        if (!ok) return fail('This code was not signed by Lakhshit, or it was changed. Ask him to send it again.');
+        if (payload.id !== inc.id || payload.nonce !== req.nonce) return fail('This code is for a different request (' + payload.id + ').');
+        var approve = payload.decision === 'approve';
+        return fetch('/api/' + (approve ? 'approve' : 'reject') + '/' + encodeURIComponent(inc.id), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ who: (payload.by || 'Lakhshit') + ' (by approval code)', comment: 'Decided by email at ' + payload.t })
+        }).then(function () {
+          delete pending[inc.id];
+          notice(approve ? 'Lakhshit approved the fix for <b>' + esc(inc.id) + '</b>. The pipeline is running now: watch the dashboard recover.'
+                         : 'Lakhshit rejected the fix for <b>' + esc(inc.id) + '</b>. Nothing will change.', approve ? 'Approved by Lakhshit' : 'Rejected by Lakhshit');
+        });
+      })
+      .catch(function () { fail('Could not check the code. Try again.'); });
+  }
+
+  function waitForCode(inc, req) {
+    notice('Your request for <b>' + esc(inc.id) + '</b> is with Lakhshit. When he replies with an approval code, paste it here.' + CODE_BOX +
+           '<a href="#" id="aiops-resend" style="font-size:13.5px;color:#0D6B60">Send the request again</a>',
+      'Waiting for Lakhshit', { label: 'Apply code', run: function () { applyCode(inc, req); } });
+    document.getElementById('aiops-resend').onclick = function (e) { e.preventDefault(); sendRequest(inc, req); };
+  }
+
+  function sendRequest(inc, req) {
+    var link = location.origin + '/approve-request/#r=' + b64u(new TextEncoder().encode(JSON.stringify(req)));
+    window.__aiopsRequestLink = link;  // also shown nowhere else; handy for support
+    var body = 'Hi Lakhshit,\n\n' + req.who + ' asks you to ' + req.decision.toUpperCase() + ' the fix for ' + req.id + ' in the AI operations demo.\n\n' +
+      'Check: ' + (req.check || '-') + '\nRoot cause (AI): ' + (req.root_cause || '-') + '\nBusiness impact: ' + (req.impact || '-') + '\n' +
+      'Proposed fix: ' + req.fix + '\n\nApprove or reject here (sign in as lakhshit):\n' + link + '\n\nThanks,\n' + req.who;
+    location.href = 'mailto:' + requestTo + '?subject=' + encodeURIComponent('Approval request: ' + req.id + ' (' + req.fix + ')') + '&body=' + encodeURIComponent(body);
+    notice('Your email app has opened with the request to Lakhshit. Press <b>Send</b> there.<br>Keep this demo tab open. When he replies with an approval code, paste it here, or later via Approve and run.' + CODE_BOX,
+      'Request ready to send', { label: 'Apply code', run: function () { applyCode(inc, req); } });
+  }
+
   function askApproval(reject) {
     var inc = currentIncident();
-    var id = inc ? inc.id : 'this incident';
-    var fix = inc && inc.op ? inc.op + (inc.target ? ' ' + inc.target : '') : 'the proposed fix';
-    if (!requestTo) { notice(esc(APPROVE_MSG)); return; }
+    if (!inc || !requestTo) { notice(esc(APPROVE_MSG)); return; }
+    if (pending[inc.id]) { waitForCode(inc, pending[inc.id]); return; }
+    var fix = inc.op ? inc.op + (inc.target ? ' ' + inc.target : '') : 'the proposed fix';
     notice('Only Lakhshit can approve or reject fixes. Send him a request to <b>' + (reject ? 'reject' : 'approve') + '</b> <b>' + esc(fix) +
-           '</b> for ' + esc(id) + '?<br><span style="color:#4E6467;font-size:13.5px">This demo runs in your browser, so the details go in the email.</span>',
+           '</b> for ' + esc(inc.id) + '? The email includes a link for him to decide.',
       'Approval needed from Lakhshit', {
         label: 'Email approval request', run: function () {
           var whoEl = document.getElementById('apWho');
-          var who = (whoEl && whoEl.value.trim()) || U.user || 'guest';
-          var body = 'Hi Lakhshit,\n\n' + who + ' asks you to ' + (reject ? 'REJECT' : 'APPROVE') + ' the fix for ' + id + ' in the AI operations demo.\n\n' +
-            'Check: ' + ((inc && inc.check) || '-') + '\n' +
-            'Root cause (AI): ' + ((inc && inc.root_cause) || '-') + '\n' +
-            'Business impact: ' + ((inc && inc.impact) || '-') + '\n' +
-            'Proposed fix: ' + fix + '\n\n' +
-            'Sent from ' + location.origin + location.pathname + '\n\nThanks,\n' + who;
-          location.href = 'mailto:' + requestTo + '?subject=' + encodeURIComponent('Approval request: ' + id + ' (' + fix + ')') + '&body=' + encodeURIComponent(body);
-          notice('Your email app has opened with the request to Lakhshit. Press <b>Send</b> there. The fix stays on hold until he approves it.', 'Almost done');
+          var req = { id: inc.id, check: inc.check, root_cause: inc.root_cause, impact: inc.impact, fix: fix,
+                      decision: reject ? 'reject' : 'approve', who: (whoEl && whoEl.value.trim()) || U.user || 'guest',
+                      nonce: b64u(crypto.getRandomValues(new Uint8Array(9))), t: new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC' };
+          pending[inc.id] = req;
+          sendRequest(inc, req);
         }
       });
   }
