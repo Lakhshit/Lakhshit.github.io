@@ -10,7 +10,7 @@
   var APPROVE = '#apYes, #apNo, [data-approve], [data-reject]';
   var APPROVE_MSG = 'Fixes are approved by Lakhshit. Please contact Lakhshit Kumar to approve or reject this fix.';
 
-  function signout(e) { e.preventDefault(); if (window.AIOPS_SIGNOUT) window.AIOPS_SIGNOUT(); else { try { localStorage.removeItem('aiops-session'); } catch (x) {} location.href = '/'; } }
+  function signout(e) { e.preventDefault(); if (window.AIOPS_SIGNOUT) window.AIOPS_SIGNOUT(); else { try { sessionStorage.removeItem('aiops-session'); localStorage.removeItem('aiops-session'); } catch (x) {} location.href = '/'; } }
 
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 

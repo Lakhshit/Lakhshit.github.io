@@ -3,18 +3,30 @@
    so a guest cannot open the live pages even by reading the page source. Built by website/protect.py. */
 (function () {
   'use strict';
-  var STORE = 'aiops-session', HOURS = 12;
+  // Signed in per browser tab: kept while moving between pages in this tab, gone when the tab or browser closes,
+  // and ended after 30 minutes without opening a page. A new tab always asks again.
+  var STORE = 'aiops-session', IDLE_MIN = 30;
+  try { localStorage.removeItem(STORE); } catch (e) {}  // drop sign-ins remembered by the old 12-hour version
   var P = window.AIOPS_PAGE;
   var enc = new TextEncoder(), dec = new TextDecoder();
 
   function b64(s) { var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }
   function load() {
-    try { var s = JSON.parse(localStorage.getItem(STORE) || 'null'); if (s && s.exp > Date.now()) return s; } catch (e) {}
+    // A refresh (F5) always asks again; following a link on the site keeps the sign-in for this tab.
+    try {
+      var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      if (nav && nav.type === 'reload') { clear(); return null; }
+    } catch (e) {}
+    try {
+      var s = JSON.parse(sessionStorage.getItem(STORE) || 'null');
+      if (s && s.exp > Date.now()) { s.exp = Date.now() + IDLE_MIN * 60e3; save(s); return s; }
+      sessionStorage.removeItem(STORE);
+    } catch (e) {}
     return window.__aiopsSession || null;
   }
-  function save(s) { window.__aiopsSession = s; try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) {} }
-  function clear() { window.__aiopsSession = null; try { localStorage.removeItem(STORE); } catch (e) {} }
+  function save(s) { window.__aiopsSession = s; try { sessionStorage.setItem(STORE, JSON.stringify(s)); } catch (e) {} }
+  function clear() { window.__aiopsSession = null; try { sessionStorage.removeItem(STORE); } catch (e) {} }
   window.AIOPS_SIGNOUT = function () { clear(); location.href = '/'; };
 
   async function aes(keyBytes, iv, ct) {
@@ -34,7 +46,7 @@
     var base = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits']);
     var bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: b64(u.salt), iterations: db.iter }, base, 256);
     var info = JSON.parse(dec.decode(await aes(new Uint8Array(bits), b64(u.iv), b64(u.ct))));
-    return { user: info.name, role: info.role, keys: info.keys, exp: Date.now() + HOURS * 3600e3 };
+    return { user: info.name, role: info.role, keys: info.keys, exp: Date.now() + IDLE_MIN * 60e3 };
   }
 
   var CSS = ':root{--ink:#12282B;--muted:#4E6467;--line:#C9D3D0;--paper:#EEF2F0;--card:#fff;--teal:#0D6B60;--red:#B0362C}' +
@@ -85,7 +97,7 @@
     var db = {};
     try { db = await getDb(); } catch (x) {}
     if (!db.request_to) return showLogin();
-    shell('<h1>Request access</h1><p>Tell Lakhshit who you are. If approved, you will get a username and password by email.</p>' +
+    shell('<h1>Request access</h1><p>You are asking for access to the <b>' + esc(TITLE) + '</b>. If Lakhshit approves, you will get a username and password by email.</p>' +
       '<form id="rq"><label for="rn">Full name</label><input id="rn" name="n" autocomplete="name" required>' +
       '<label for="re">Work email</label><input id="re" name="e" type="email" autocomplete="email" required>' +
       '<label for="rt">Team or organisation</label><input id="rt" name="t" autocomplete="organization">' +
@@ -97,9 +109,9 @@
     document.getElementById('rq').onsubmit = function (ev) {
       ev.preventDefault();
       var f = ev.target, n = f.n.value.trim(), e = f.e.value.trim(), t = f.t.value.trim(), w = f.w.value.trim();
-      var body = 'Hi Lakhshit,\n\nPlease give me access to the AI Operations Strategy site.\n\n' +
+      var body = 'Hi Lakhshit,\n\nPlease give me access to the ' + TITLE + ' at ' + location.origin + location.pathname + '\n\n' +
         'Name: ' + n + '\nEmail: ' + e + '\nTeam: ' + (t || '-') + '\nReason: ' + (w || '-') + '\n\nThanks,\n' + n;
-      location.href = 'mailto:' + db.request_to + '?subject=' + encodeURIComponent('Access request: AI Operations Strategy (' + n + ')') +
+      location.href = 'mailto:' + db.request_to + '?subject=' + encodeURIComponent('Access request: ' + TITLE + ' (' + n + ')') +
         '&body=' + encodeURIComponent(body);
       shell('<h1>Almost done</h1><p>Your email app has opened with the request ready. Press <b>Send</b> there. ' +
         'Lakhshit will reply with your sign-in details.</p><p>If nothing opened, email <b>' + esc(db.request_to) +
