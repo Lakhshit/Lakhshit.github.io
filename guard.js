@@ -1,15 +1,18 @@
 /* Runs inside every unlocked page: sign-out links, and read-only mode for guests.
-   Guests can explore the demo (inject faults, run checks, approve fixes) but cannot change settings. */
+   Guests can explore the demo (inject faults, run checks, read the AI's diagnosis) but cannot change
+   settings or approve fixes. */
 (function () {
   'use strict';
   var U = window.AIOPS_USER || { role: 'viewer' };
   var admin = U.role === 'admin';
   var LOCKED = '[data-p="settings"], [data-p="prompts"], #ctl, [data-ctl-on], #interval, [data-locked]';
   var MSG = 'This is managed by Lakhshit. Please contact Lakhshit Kumar.';
+  var APPROVE = '#apYes, #apNo, [data-approve], [data-reject]';
+  var APPROVE_MSG = 'Fixes are approved by Lakhshit. Please contact Lakhshit Kumar to approve or reject this fix.';
 
   function signout(e) { e.preventDefault(); if (window.AIOPS_SIGNOUT) window.AIOPS_SIGNOUT(); else { try { localStorage.removeItem('aiops-session'); } catch (x) {} location.href = '/'; } }
 
-  function notice() {
+  function notice(msg) {
     var d = document.getElementById('aiops-lock');
     if (!d) {
       d = document.createElement('div');
@@ -19,21 +22,23 @@
       d.setAttribute('aria-labelledby', 'aiops-lock-t');
       d.style.cssText = 'position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;background:rgba(10,20,22,.45)';
       d.innerHTML = '<div style="max-width:380px;width:100%;background:#fff;color:#12282B;border-radius:14px;padding:24px;font:15px/1.5 system-ui,Segoe UI,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.25)">' +
-        '<b id="aiops-lock-t" style="display:block;font-size:17px;margin-bottom:6px">View-only access</b><span>' + MSG + '</span>' +
+        '<b id="aiops-lock-t" style="display:block;font-size:17px;margin-bottom:6px">View-only access</b><span id="aiops-lock-m"></span>' +
         '<button type="button" style="display:block;margin-top:18px;padding:9px 18px;border:0;border-radius:8px;background:#0D6B60;color:#fff;font:inherit;font-weight:600;cursor:pointer">OK</button></div>';
       d.addEventListener('click', function (e) { if (e.target === d || e.target.tagName === 'BUTTON') d.hidden = true; });
       document.body.appendChild(d);
     }
+    d.querySelector('#aiops-lock-m').textContent = msg || MSG;
     d.hidden = false;
     d.querySelector('button').focus();
   }
 
   function block(e) {
-    var t = e.target && e.target.closest && e.target.closest(LOCKED);
+    var ap = e.target && e.target.closest && e.target.closest(APPROVE);
+    var t = ap || (e.target && e.target.closest && e.target.closest(LOCKED));
     if (!t) return;
     if (e.type === 'keydown' && !/^(Enter| |ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Home|End|PageUp|PageDown)$/.test(e.key)) return;
     e.preventDefault(); e.stopImmediatePropagation();
-    if (e.type !== 'mousedown') notice();
+    if (e.type !== 'mousedown') notice(ap ? APPROVE_MSG : MSG);
   }
 
   function ready() {
