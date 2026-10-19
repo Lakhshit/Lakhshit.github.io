@@ -59,7 +59,9 @@
     'input:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:transparent}' +
     'button,.btn{display:inline-block;width:100%;margin-top:22px;padding:12px;border:0;border-radius:10px;background:var(--teal);color:#fff;font:inherit;font-weight:600;cursor:pointer;text-align:center;text-decoration:none}' +
     'button[disabled]{opacity:.6;cursor:wait}.err{color:var(--red);font-size:14px;min-height:21px;margin:12px 0 0}.fine{font-size:12.5px;margin:22px 0 0;text-align:center}' +
-    '.alt{background:transparent;color:var(--ink);border:1px solid var(--line);margin-top:10px}';
+    '.alt{background:transparent;color:var(--ink);border:1px solid var(--line);margin-top:10px}' +
+    '.ai{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 18px}.ai span{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}';
+  var AI_CHIPS = '<div class="ai" aria-label="AI inside"><span>Deep learning</span><span>Machine learning</span><span>RAG</span><span>Agentic AI</span><span>Responsible AI</span></div>';
   var MARK = '<div class="mark" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 32 32"><path d="M7 17h5l3-7 4 13 3-6h3" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
 
   var TITLE = P.title || 'AI Operations Strategy';
@@ -71,7 +73,7 @@
   }
 
   function showLogin(msg) {
-    shell('<h1>' + esc(TITLE) + '</h1><p>' + esc(TEXT) + '</p>' +
+    shell('<h1>' + esc(TITLE) + '</h1><p>' + esc(TEXT) + '</p>' + AI_CHIPS +
       '<form id="f" autocomplete="on"><label for="u">Username</label><input id="u" name="username" autocomplete="username" required autocapitalize="none" spellcheck="false">' +
       '<label for="pw">Password</label><input id="pw" name="password" type="password" autocomplete="current-password" required>' +
       '<div class="err" id="e" role="alert">' + (msg || '') + '</div><button id="b" type="submit">Sign in</button></form>' +
