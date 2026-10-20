@@ -154,7 +154,7 @@ footer{margin-top:90px;border-top:1px solid var(--line);padding:28px 0 48px;font
   .lede{font-size:18px}
 }
 @media (prefers-reduced-motion:reduce){ .cell{transition:none} }
-.aistack{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;max-width:980px}
+.aistack{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:980px}
 .aistack li{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--c,#0D6B60);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .aistack b{font-size:15px}.aistack span{font-size:13.5px;color:var(--muted);line-height:1.35}
 .aistack-l{margin:28px 0 0;font:600 12px/1 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -186,10 +186,11 @@ footer{margin-top:90px;border-top:1px solid var(--line);padding:28px 0 48px;font
   </div>
   <p class="aistack-l">AI inside</p>
   <ul class="aistack" aria-label="AI techniques in this system">
-    <li style="--c:#6B3FA0"><b>Deep learning</b><span>A transformer language model diagnoses each problem</span></li>
-    <li style="--c:#3557C9"><b>Machine learning</b><span>Anomaly detection learns what normal looks like</span></li>
-    <li style="--c:#A35800"><b>RAG</b><span>Retrieves the right runbook for every diagnosis</span></li>
-    <li style="--c:#1C7A43"><b>Agentic AI</b><span>Observes, diagnoses, acts and verifies on its own</span></li>
+    <li style="--c:#3557C9"><b>Machine learning</b><span>Learns what normal looks like, detects anomalies and predicts breaches before they happen</span></li>
+    <li style="--c:#6B3FA0"><b>Deep learning</b><span>Our own neural network, trained here, plus a transformer model that diagnoses each problem</span></li>
+    <li style="--c:#A35800"><b>RAG and memory</b><span>Retrieves the right runbook and recalls how the same problem was fixed before</span></li>
+    <li style="--c:#0D6B60"><b>Generative AI</b><span>Explains root cause and impact, and answers questions in plain English</span></li>
+    <li style="--c:#1C7A43"><b>Agentic AI</b><span>Observes, diagnoses, proposes and verifies on its own</span></li>
     <li style="--c:#B3222B"><b>Responsible AI</b><span>Ten controls and a human approve every change</span></li>
   </ul>
 

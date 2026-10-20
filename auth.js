@@ -61,7 +61,7 @@
     'button[disabled]{opacity:.6;cursor:wait}.err{color:var(--red);font-size:14px;min-height:21px;margin:12px 0 0}.fine{font-size:12.5px;margin:22px 0 0;text-align:center}' +
     '.alt{background:transparent;color:var(--ink);border:1px solid var(--line);margin-top:10px}' +
     '.ai{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 18px}.ai span{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}';
-  var AI_CHIPS = '<div class="ai" aria-label="AI inside"><span>Deep learning</span><span>Machine learning</span><span>RAG</span><span>Agentic AI</span><span>Responsible AI</span></div>';
+  var AI_CHIPS = '<div class="ai" aria-label="AI inside"><span>Machine learning</span><span>Deep learning</span><span>RAG</span><span>Generative AI</span><span>Agentic AI</span><span>Responsible AI</span></div>';
   var MARK = '<div class="mark" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 32 32"><path d="M7 17h5l3-7 4 13 3-6h3" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
 
   var TITLE = P.title || 'AI Operations Strategy';
