@@ -28,6 +28,7 @@
   function save(s) { window.__aiopsSession = s; try { sessionStorage.setItem(STORE, JSON.stringify(s)); } catch (e) {} }
   function clear() { window.__aiopsSession = null; try { sessionStorage.removeItem(STORE); } catch (e) {} }
   window.AIOPS_SIGNOUT = function () { clear(); location.href = '/'; };
+  window.AIOPS_SWITCH = function () { clear(); showLogin(); };   // sign in as someone else, staying on this page
 
   async function aes(keyBytes, iv, ct) {
     var k = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt']);
@@ -187,9 +188,9 @@
 
   function showHome(s) {
     var first = String(s.user || '').replace(/^\w/, function (c) { return c.toUpperCase(); });
-    var go = [['/demo/', 'Interactive demo', 'Try it yourself: inject a problem and watch the AI find, explain and fix it.', '<path d="M8 5v14l11-7L8 5Z"/>'],
-              ['/overview/', 'AI strategy', 'How it works, the AI inside, the ten safety checks and the results.', '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>']];
+    var go = [['/demo/', 'Interactive demo', 'Try it yourself: inject a problem and watch the AI find, explain and fix it.', '<path d="M8 5v14l11-7L8 5Z"/>']];
     if (s.keys && s.keys.live) go.push(['/live/', 'Live system', 'Presenter console: the Kubernetes lab with the private AI model.', '<circle cx="12" cy="12" r="3"/><path d="M5 12a7 7 0 0 1 14 0M2 12a10 10 0 0 1 20 0"/>']);
+    if (go.length === 1) { location.href = go[0][0]; return; }   // guests: straight to the demo
     shell('<span class="eyebrow">Signed in as ' + esc(first) + '</span><h1>Where would you like to go?</h1>' +
       '<div class="dest">' + go.map(function (g) {
         return '<a href="' + g[0] + '"><i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + g[3] + '</svg></i>' +
@@ -200,7 +201,7 @@
 
   function showRestricted() {
     shell('<span class="eyebrow">Live system</span><h1>Restricted area</h1><p>The live system is available to Lakhshit only. For a walkthrough, please contact Lakhshit Kumar.</p>' +
-      '<a class="btn" href="/">Back to the site</a><button class="btn-p alt" type="button" onclick="AIOPS_SIGNOUT()">Sign in as someone else</button>');
+      '<a class="btn" href="/">Back to the site</a><button class="btn-p alt" type="button" onclick="AIOPS_SWITCH()">Sign in as someone else</button>');
   }
 
   async function open(s) {
