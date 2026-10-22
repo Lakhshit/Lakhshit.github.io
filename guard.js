@@ -20,7 +20,7 @@
       d.id = 'aiops-lock';
       d.setAttribute('role', 'alertdialog');
       d.setAttribute('aria-modal', 'true');
-      d.setAttribute('aria-labelledby', 'aiops-lock-t');
+      d.setAttribute('aria-labelledby', 'aiops-lock-m');
       d.style.cssText = 'position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;background:rgba(10,20,22,.45)';
       d.innerHTML = '<div style="max-width:420px;width:100%;background:#fff;color:#12282B;border-radius:14px;padding:24px;font:15px/1.5 system-ui,Segoe UI,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.25)">' +
         '<b id="aiops-lock-t" style="display:block;font-size:17px;margin-bottom:6px"></b><div id="aiops-lock-m"></div>' +
@@ -29,7 +29,7 @@
       d.addEventListener('click', function (e) { if (e.target === d || e.target.id === 'aiops-lock-ok') d.hidden = true; });
       document.body.appendChild(d);
     }
-    d.querySelector('#aiops-lock-t').textContent = title || 'View-only access';
+    var t = d.querySelector('#aiops-lock-t'); t.textContent = title || ''; t.hidden = !title;
     d.querySelector('#aiops-lock-m').innerHTML = msg || esc(MSG);
     var go = d.querySelector('#aiops-lock-go'), ok = d.querySelector('#aiops-lock-ok');
     go.hidden = !action;
