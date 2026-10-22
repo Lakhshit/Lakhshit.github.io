@@ -93,6 +93,10 @@
     '.safe{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;color:var(--muted);margin:0;text-align:center}' +
     '.ai{display:flex;flex-wrap:wrap;gap:6px;position:relative}.ai span{font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#EAF6F3}' +
     '.copy{font-size:12px;color:var(--muted);margin:0}' +
+    '.dest{display:flex;flex-direction:column;gap:10px;margin-top:18px}.dest a{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--field);color:var(--ink);text-decoration:none;transition:border-color .15s,transform .1s,box-shadow .15s}' +
+    '.dest a:hover,.dest a:focus-visible{border-color:var(--teal);box-shadow:0 0 0 4px color-mix(in srgb,var(--teal) 14%,transparent);outline:none}.dest a:active{transform:translateY(1px)}' +
+    '.dest i{flex:none;width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:var(--teal);color:var(--on-teal)}' +
+    '.dest span{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}.dest b{font-size:15.5px}.dest small{font-size:13px;color:var(--muted);line-height:1.4}.dest em{font-style:normal;color:var(--teal);font-size:18px}' +
     '.ai.mob{display:none}@media (max-width:900px){.ai.mob{display:flex}.gate{grid-template-columns:1fr}.story{padding:28px 20px;gap:18px}.story h2{margin-top:6px;font-size:26px}.pipe,.facts{display:none}.side{padding:24px 16px 32px}.box{padding:28px 22px}}' +
     '@media (prefers-reduced-motion:reduce){.pipe:before,.pipe i,.spin,.err:not(:empty){animation:none}}';
   var AI_CHIPS = '<div class="ai" aria-label="AI inside"><span>Machine learning</span><span>Deep learning</span><span>RAG</span><span>Generative AI</span><span>Agentic AI</span><span>Responsible AI</span></div>';
@@ -108,11 +112,11 @@
                 ['Act', 'Agentic AI', '<path d="M5 12h14M13 6l6 6-6 6"/>'], ['Guard', 'Responsible AI', '<path d="M12 3 5 6v6c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6l-7-3Z"/>']];
 
   var TITLE = P.title || 'AI Operations Strategy';
-  var TEXT = P.text || 'This site contains AI strategy material prepared for leadership. Access is by invitation.';
+  var TEXT = P.text != null ? P.text : 'This site contains AI strategy material prepared for leadership. Access is by invitation.';
   function story() {
     var live = P.key === 'live';
     return '<div class="brand"><span class="mk">' + MARK_SVG + '</span><div><b>AI Operations</b><span>by Lakhshit Kumar</span></div></div>' +
-      (live ? '<h2>Live system. <em>Presenter console.</em></h2><p class="lede">The real cluster, the real AI model and real approvals, shown during presentations.</p>'
+      (live ? '<h2>Live system. <em>Presenter console.</em></h2><p class="lede">Running on Kubernetes with a private AI model and real approval pipelines.</p>'
             : '<h2>AI that finds the problem, <em>explains it</em>, and asks before it fixes.</h2>') +
       '<div class="pipe" aria-hidden="true">' + STAGES.map(function (s) {
         return '<div><i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF6F3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + s[2] + '</svg></i><b>' + s[0] + '</b><small>' + s[1] + '</small></div>';
@@ -128,7 +132,7 @@
   }
 
   function showLogin(msg) {
-    shell('<span class="eyebrow">' + esc(TITLE) + '</span><h1>Sign in</h1><p>' + esc(TEXT) + '</p>' +
+    shell('<span class="eyebrow">' + esc(TITLE) + '</span><h1>Sign in</h1>' + (TEXT ? '<p>' + esc(TEXT) + '</p>' : '') +
       '<form id="f" autocomplete="on"><label for="u">Username</label><div class="field">' + IC.user +
       '<input id="u" name="username" autocomplete="username" required autocapitalize="none" spellcheck="false" placeholder="Your username"></div>' +
       '<label for="pw">Password</label><div class="field pw">' + IC.lock +
@@ -148,7 +152,7 @@
       ev.preventDefault(); b.disabled = true; b.innerHTML = '<span class="spin" aria-hidden="true"></span>Signing in…'; e.textContent = '';
       try {
         var s = await signIn(f.username.value, f.password.value);
-        save(s); open(s);
+        save(s); if (P.home) showHome(s); else open(s);
       } catch (x) {
         e.textContent = ''; void e.offsetWidth; e.textContent = 'Username or password is incorrect.'; b.disabled = false; b.textContent = 'Sign in';
       }
@@ -181,6 +185,19 @@
     };
   }
 
+  function showHome(s) {
+    var first = String(s.user || '').replace(/^\w/, function (c) { return c.toUpperCase(); });
+    var go = [['/demo/', 'Interactive demo', 'Try it yourself: inject a problem and watch the AI find, explain and fix it.', '<path d="M8 5v14l11-7L8 5Z"/>'],
+              ['/overview/', 'AI strategy', 'How it works, the AI inside, the ten safety checks and the results.', '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>']];
+    if (s.keys && s.keys.live) go.push(['/live/', 'Live system', 'Presenter console: the Kubernetes lab with the private AI model.', '<circle cx="12" cy="12" r="3"/><path d="M5 12a7 7 0 0 1 14 0M2 12a10 10 0 0 1 20 0"/>']);
+    shell('<span class="eyebrow">Signed in as ' + esc(first) + '</span><h1>Where would you like to go?</h1>' +
+      '<div class="dest">' + go.map(function (g) {
+        return '<a href="' + g[0] + '"><i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + g[3] + '</svg></i>' +
+          '<span><b>' + g[1] + '</b><small>' + g[2] + '</small></span><em aria-hidden="true">→</em></a>'; }).join('') + '</div>' +
+      '<p class="fine"><a href="#" onclick="AIOPS_SIGNOUT();return false">Sign out</a></p>');
+    var a = document.querySelector('.dest a'); if (a) a.focus();
+  }
+
   function showRestricted() {
     shell('<span class="eyebrow">Live system</span><h1>Restricted area</h1><p>The live system is available to Lakhshit only. For a walkthrough, please contact Lakhshit Kumar.</p>' +
       '<a class="btn" href="/">Back to the site</a><button class="btn-p alt" type="button" onclick="AIOPS_SIGNOUT()">Sign in as someone else</button>');
@@ -202,5 +219,5 @@
     return;
   }
   var s = load();
-  if (s) open(s); else if (location.hash === '#request-access') showRequest(); else showLogin();
+  if (s) { if (P.home) showHome(s); else open(s); } else if (location.hash === '#request-access') showRequest(); else showLogin();
 })();
