@@ -135,10 +135,10 @@
       '<input id="pw" name="password" type="password" autocomplete="current-password" required placeholder="Your password">' +
       '<button class="eye" type="button" id="eye" aria-label="Show password" aria-pressed="false">' + IC.eye + '</button></div>' +
       '<div class="err" id="e" role="alert">' + (msg || '') + '</div><button class="btn-p" id="b" type="submit">Sign in</button></form>' +
-      '<p class="fine" id="req">Need access? Please contact Lakhshit Kumar.</p>' +
+      '<p class="fine" id="req">' + (P.key === 'live' ? '' : 'Need access? Please contact Lakhshit Kumar.') + '</p>' +
       '<p class="safe">' + IC.shield + 'Your password never leaves this browser.</p>');
     getDb().then(function (db) {
-      if (db.request_to) document.getElementById('req').innerHTML = 'No account yet? <a href="#request-access" id="reqa">Request access</a>';
+      if (db.request_to && P.key !== 'live') document.getElementById('req').innerHTML = 'No account yet? <a href="#request-access" id="reqa">Request access</a>';
       var a = document.getElementById('reqa'); if (a) a.onclick = function (ev) { ev.preventDefault(); showRequest(); };
     }).catch(function () {});
     var f = document.getElementById('f'), b = document.getElementById('b'), e = document.getElementById('e'), pw = document.getElementById('pw'), eye = document.getElementById('eye');
