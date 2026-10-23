@@ -112,7 +112,7 @@
                 ['Diagnose', 'Generative AI', '<path d="M12 3a7 7 0 0 0-4 12.7V19h8v-3.3A7 7 0 0 0 12 3Z"/><path d="M9.5 22h5"/>'],
                 ['Act', 'Agentic AI', '<path d="M5 12h14M13 6l6 6-6 6"/>'], ['Guard', 'Responsible AI', '<path d="M12 3 5 6v6c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6l-7-3Z"/>']];
 
-  var TITLE = P.title || 'AI Operations Strategy';
+  var TITLE = P.title || 'AI Operations';
   var TEXT = P.text != null ? P.text : 'This site contains AI strategy material prepared for leadership. Access is by invitation.';
   function story() {
     var live = P.key === 'live';
